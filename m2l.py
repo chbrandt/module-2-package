@@ -1,6 +1,7 @@
 from __future__ import print_function, absolute_import
 
 import os
+import shutil
 
 import click
 echo = click.echo
@@ -49,12 +50,13 @@ class Package(object):
      - author
     """
     version = 0.1
+
     def __init__(self, options):
         assert options['pymod']
         self.pymod = options['pymod']
 
-        self.pkgname = self.set_pkgname(options['pkgname'])
         self.pkgimp = self.set_pkgimp(options['pkgimp'])
+        self.pkgname = self.set_pkgname(options['pkgname'])
         assert self.pkgname and self.pkgimp
 
         self.author = self.set_author(options['author'])
@@ -79,6 +81,10 @@ class Package(object):
     def set_description(self, description):
         return description or "The {} package.".format(self.pkgname)
 
+    @property
+    def path(self):
+        return os.path.abspath(self.pkgname)
+
 
 @cli.command()
 @click.argument('pymod')
@@ -87,54 +93,58 @@ def init(options, pymod):
     """
     Initialize package schema from '.py' module
     """
-    print('init:', pymod)
+    assert os.path.exists(pymod), "Module '{}' not found.".format(pymod)
 
     options['pymod'] = pymod
     pkg = Package(options)
+    do_package(pkg)
     do_readme(pkg)
     do_setuptools(pkg)
+    do_versioneer(pkg)
+
+
+def do_package(pkg):
+    """
+    Copy module to package
+    """
+    path_pkg = pkg.path
+    if os.path.exists(path_pkg) and os.path.isdir(path_pkg):
+        shutil.rmtree(path_pkg)
+    os.mkdir(path_pkg)
+    path_src = os.path.join(path_pkg, pkg.pkgimp)
+    os.mkdir(path_src)
+    shutil.copy(pkg.pymod, path_src)
+    templates.render('__init__.py', pkg, subdir=pkg.pkgimp)
 
 
 def do_readme(pkg):
     """
     Render README file
     """
-    temp = templates.get('README.md')
-    # readme = temp.render(package_name=pkg.pkgname, author_name=pkg.author)
-    readme = temp.render(pkg=pkg)
+    templates.render('README.md', pkg)
 
-    pkgdir = os.path.abspath(pkg.pkgname)
-    if not (os.path.exists(pkgdir) or os.path.isdir(pkgdir)):
-        os.mkdir(pkgdir)
-    readme_file = os.path.join(pkgdir,'README.md')
-
-    with open(readme_file, 'w') as fp:
-        fp.write(readme)
-
-
-def _license():
-    pass
 
 def do_setuptools(pkg):
     """
     Render setup.{py,cfg} files
     """
     for fname in ['setup.cfg','setup.py']:
-
-        temp = templates.get(fname)
-        cont = temp.render(pkg=pkg)
-
-        pkgdir = os.path.abspath(pkg.pkgname)
-        if not (os.path.exists(pkgdir) or os.path.isdir(pkgdir)):
-            os.mkdir(pkgdir)
-        cont_file = os.path.join(pkgdir, fname)
-
-        with open(cont_file, 'w') as fp:
-            fp.write(cont)
+        templates.render(fname, pkg)
 
 
-def _versioneer():
-    pass
+def do_versioneer(pkg):
+    """
+    Setup versioneer to package
+    """
+    _path = pkg.path
+    assert os.path.exists(_path) and os.path.isdir(_path),\
+            "Was expecting to find '{}' path. This is a bug.".format(_path)
+    _pwd = os.getcwd()
+    try:
+        os.chdir(_path)
+        os.system('versioneer install')
+    finally:
+        os.chdir(_pwd)
 
 
 def _tests():
@@ -142,6 +152,10 @@ def _tests():
 
 
 def _conda():
+    pass
+
+
+def _license():
     pass
 
 
@@ -154,6 +168,23 @@ class templates:
         _file = os.path.join('templates', name)
         return _env.get_template(_file)
 
+    @staticmethod
+    def render(name, pkg, subdir=None):
+        temp = templates.get(name)
+        cont = temp.render(pkg=pkg)
+
+        def check_dir(path):
+            if not (os.path.exists(path) or os.path.isdir(path)):
+                os.mkdir(path)
+        write_to = pkg.path
+        check_dir(write_to)
+        if subdir:
+            write_to = os.path.join(write_to, subdir)
+            check_dir(write_to)
+        write_to = os.path.join(write_to, name)
+
+        with open(write_to, 'w') as fp:
+            fp.write(cont)
 
 
 if __name__ == "__main__":
