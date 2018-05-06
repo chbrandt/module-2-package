@@ -111,8 +111,8 @@ def init(options, pymod):
     do_tests(pkg)
     do_conda(pkg)
     # _license(pkg)
-    # do_git(pkg)
-    # do_versioneer(pkg)
+    do_git(pkg)
+    do_versioneer(pkg)
 
 
 def do_package(pkg):
@@ -170,7 +170,7 @@ def do_git(pkg):
     """
     Create git repository, add all files
     """
-    git_init_all = 'git init && git add *'
+    git_init_all = 'git init && git add * && git commit -am "Init package"'
 
     _path = pkg.path
     assert os.path.exists(_path) and os.path.isdir(_path)
