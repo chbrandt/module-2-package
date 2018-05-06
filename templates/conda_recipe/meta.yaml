@@ -1,16 +1,15 @@
+{% set data = load_setup_py_data() %}
+
 package:
-  name: {{pkg.pkgname}}
-  version: {{ '{{'  }} GIT_DESCRIBE_TAG {{ '{{' }}
+  name: conda-build-test-source-setup-py-data
+  version: {{ data.get('version') }}
 
 source:
-  # path: ../{{pkg.pkgname}}
-  git_url: ../../
+  path_url: ../
 
 build:
   script: python setup.py install --single-version-externally-managed --record=record.txt
   noarch: python
-  number: {{ '{{'  }} GIT_DESCRIBE_NUMBER {{ '{{' }}
-  string: {{ '{{'  }} GIT_BUILD_STR {{ '{{' }}
 
 requirements:
   build:
@@ -18,8 +17,9 @@ requirements:
 
   run:
     - python
-    {% if pkg.requires %}
-    {% endif %}
+  {% for package in pkg.requires %}
+    - {{ package }}
+  {% endfor %}
 
 test:
   requires:
