@@ -26,8 +26,9 @@ pass_options = click.make_pass_decorator(Options, ensure=True)
 @click.option('--pkgimp', default=None, type=str, help="Namespace of package to import")
 @click.option('--author', default=None, type=str, help="Name of package author")
 @click.option('--description', default=None, type=str, help="Short package description")
+@click.option('--dest', default=None, type=str, help="Top directory where package should be created")
 @pass_options
-def cli(options, pkgname, pkgimp, author, description):
+def cli(options, pkgname, pkgimp, author, description, dest):
     """
     Module-to-package setup tool
     """
@@ -35,6 +36,7 @@ def cli(options, pkgname, pkgimp, author, description):
     options['pkgimp'] = pkgimp
     options['author'] = author
     options['description'] = description
+    options['dest'] = dest
 
 
 class Package(object):
@@ -48,6 +50,7 @@ class Package(object):
      - version
      - description
      - author
+     - dest
     """
     version = 0.1
 
@@ -62,6 +65,8 @@ class Package(object):
         self.author = self.set_author(options['author'])
         self.description = self.set_description(options['description'])
         assert not(self.author is None or self.description is None)
+
+        self.path = self.set_path(options['dest'])
 
     def set_pkgname(self, pkgname):
         if pkgname is None or pkgname.strip() == '':
@@ -81,9 +86,12 @@ class Package(object):
     def set_description(self, description):
         return description or "The {} package.".format(self.pkgname)
 
-    @property
-    def path(self):
-        return os.path.abspath(self.pkgname)
+    def set_path(self, dest):
+        if dest:
+            dest = os.path.join(os.path.abspath(dest), self.pkgname)
+        else:
+            dest = os.path.abspath(self.pkgname)
+        return dest
 
 
 @cli.command()
@@ -98,12 +106,13 @@ def init(options, pymod):
     options['pymod'] = pymod
     pkg = Package(options)
     do_package(pkg)
-    # do_git(pkg)
     do_readme(pkg)
     do_setuptools(pkg)
-    # do_versioneer(pkg)
     do_tests(pkg)
     do_conda(pkg)
+    # _license(pkg)
+    # do_git(pkg)
+    # do_versioneer(pkg)
 
 
 def do_package(pkg):
@@ -117,7 +126,8 @@ def do_package(pkg):
     path_src = os.path.join(path_pkg, pkg.pkgimp)
     os.mkdir(path_src)
     shutil.copy(pkg.pymod, path_src)
-    templates.render('__init__.py', pkg, subdir=pkg.pkgimp)
+    _src = os.path.join('src', '__init__.py')
+    templates.render(_src, pkg, subdir=pkg.pkgimp)
 
 
 def do_readme(pkg):
@@ -135,11 +145,41 @@ def do_setuptools(pkg):
         templates.render(fname, pkg)
 
 
+def do_tests(pkg):
+    """
+    Copy tests structure
+    """
+    _src = os.path.join('tests','test_core.py')
+    templates.render(_src, pkg, subdir='tests')
+
+
+
+def do_conda(pkg):
+    """
+    Render conda-recipe
+    """
+    _src = os.path.join('conda_recipe', 'meta.yaml')
+    templates.render(_src, pkg, subdir='conda_recipe')
+
+
+def _license():
+    pass
+
+
 def do_git(pkg):
     """
-    Create git repository, necessary to versioneer
+    Create git repository, add all files
     """
-    pass
+    git_init_all = 'git init && git add *'
+
+    _path = pkg.path
+    assert os.path.exists(_path) and os.path.isdir(_path)
+    _pwd = os.getcwd()
+    try:
+        os.chdir(_path)
+        os.system(git_init_all)
+    finally:
+        os.chdir(_pwd)
 
 
 def do_versioneer(pkg):
@@ -147,34 +187,14 @@ def do_versioneer(pkg):
     Setup versioneer to package
     """
     _path = pkg.path
-    assert os.path.exists(_path) and os.path.isdir(_path),\
-            "Was expecting to find '{}' path. This is a bug.".format(_path)
+    assert os.path.exists(_path) and os.path.isdir(_path)
+
     _pwd = os.getcwd()
     try:
         os.chdir(_path)
         os.system('versioneer install')
     finally:
         os.chdir(_pwd)
-
-
-def do_tests(pkg):
-    """
-    Copy tests structure
-    """
-    from distutils.dir_util import copy_tree
-    copy_tree(os.path.join(templates.path, 'tests'), os.path.join(pkg.path, 'tests'))
-    shutil.copy(os.path.join(templates.path, 'test.py'), pkg.path)
-
-
-def do_conda(pkg):
-    """
-    Render conda-recipe
-    """
-    templates.render('meta.yaml', pkg, subdir='conda_recipe')
-
-
-def _license():
-    pass
 
 
 class templates:
@@ -188,12 +208,12 @@ class templates:
         return _env.get_template(name)
 
     @staticmethod
-    def render(name, pkg, subdir=None):
+    def render(pathname, pkg, subdir=None):
         def assure_dir(path):
             if not (os.path.exists(path) or os.path.isdir(path)):
                 os.mkdir(path)
 
-        temp = templates.get(name)
+        temp = templates.get(pathname)
         cont = temp.render(pkg=pkg)
 
         write_to = pkg.path
@@ -201,7 +221,9 @@ class templates:
         if subdir:
             write_to = os.path.join(write_to, subdir)
             assure_dir(write_to)
-        write_to = os.path.join(write_to, name)
+
+        basename = os.path.basename(pathname)
+        write_to = os.path.join(write_to, basename)
 
         with open(write_to, 'w') as fp:
             fp.write(cont)

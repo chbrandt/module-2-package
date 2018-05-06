@@ -21,9 +21,9 @@ requirements:
 
   run:
     - python
-  {% for package in pkg.requires %}
+  {%- for package in pkg.requires %}
     - {{ package }}
-  {% endfor %}
+  {%- endfor %}
 
 test:
   requires:
