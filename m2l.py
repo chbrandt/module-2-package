@@ -100,7 +100,9 @@ def init(options, pymod):
     do_package(pkg)
     do_readme(pkg)
     do_setuptools(pkg)
-    do_versioneer(pkg)
+    do_tests(pkg)
+    # do_git(pkg)
+    # do_versioneer(pkg)
 
 
 def do_package(pkg):
@@ -132,6 +134,13 @@ def do_setuptools(pkg):
         templates.render(fname, pkg)
 
 
+def do_git(pkg):
+    """
+    Create git repository, necessary to versioneer
+    """
+    pass
+
+
 def do_versioneer(pkg):
     """
     Setup versioneer to package
@@ -147,8 +156,13 @@ def do_versioneer(pkg):
         os.chdir(_pwd)
 
 
-def _tests():
-    pass
+def do_tests(pkg):
+    """
+    Copy tests structure
+    """
+    from distutils.dir_util import copy_tree
+    copy_tree(os.path.join(templates.path, 'tests'), os.path.join(pkg.path, 'tests'))
+    shutil.copy(os.path.join(templates.path, 'test.py'), pkg.path)
 
 
 def _conda():
@@ -160,27 +174,29 @@ def _license():
 
 
 class templates:
-    @staticmethod
-    def get(name):
+    path = os.path.join(THIS_DIR, 'templates')
+
+    @classmethod
+    def get(cls, name):
         from jinja2 import Environment, FileSystemLoader
-        _env = Environment(loader=FileSystemLoader(THIS_DIR),
+        _env = Environment(loader=FileSystemLoader(cls.path),
                            keep_trailing_newline=True)
-        _file = os.path.join('templates', name)
-        return _env.get_template(_file)
+        return _env.get_template(name)
 
     @staticmethod
     def render(name, pkg, subdir=None):
+        def assure_dir(path):
+            if not (os.path.exists(path) or os.path.isdir(path)):
+                os.mkdir(path)
+
         temp = templates.get(name)
         cont = temp.render(pkg=pkg)
 
-        def check_dir(path):
-            if not (os.path.exists(path) or os.path.isdir(path)):
-                os.mkdir(path)
         write_to = pkg.path
-        check_dir(write_to)
+        assure_dir(write_to)
         if subdir:
             write_to = os.path.join(write_to, subdir)
-            check_dir(write_to)
+            assure_dir(write_to)
         write_to = os.path.join(write_to, name)
 
         with open(write_to, 'w') as fp:
