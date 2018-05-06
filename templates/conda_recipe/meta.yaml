@@ -13,6 +13,10 @@ source:
 
 build:
   script: python setup.py install --single-version-externally-managed --record=record.txt
+  {%- if pkg.entrypoint %}
+  entry_points:
+    - {{pkg.pkgimp}} = {{pkg.pkgimp}}:{{pkg.entrypoint}}
+  {% endif %}
 
 requirements:
   build:
