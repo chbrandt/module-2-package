@@ -3,17 +3,16 @@
 {%- endraw %}
 
 package:
-  name: conda-build-test-source-setup-py-data
+  name: {{pkg.pkgname}}
   {%- raw %}
   version: {{ data.get('version') }}
   {%- endraw %}
 
 source:
-  path_url: ../
+  path: ../
 
 build:
   script: python setup.py install --single-version-externally-managed --record=record.txt
-  noarch: python
 
 requirements:
   build:
