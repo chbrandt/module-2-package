@@ -1,8 +1,12 @@
+{%- raw -%}
 {% set data = load_setup_py_data() %}
+{%- endraw %}
 
 package:
   name: conda-build-test-source-setup-py-data
+  {%- raw %}
   version: {{ data.get('version') }}
+  {%- endraw %}
 
 source:
   path_url: ../

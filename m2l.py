@@ -98,11 +98,12 @@ def init(options, pymod):
     options['pymod'] = pymod
     pkg = Package(options)
     do_package(pkg)
+    # do_git(pkg)
     do_readme(pkg)
     do_setuptools(pkg)
-    do_tests(pkg)
-    # do_git(pkg)
     # do_versioneer(pkg)
+    do_tests(pkg)
+    do_conda(pkg)
 
 
 def do_package(pkg):
@@ -165,8 +166,11 @@ def do_tests(pkg):
     shutil.copy(os.path.join(templates.path, 'test.py'), pkg.path)
 
 
-def do_conda():
-    pass
+def do_conda(pkg):
+    """
+    Render conda-recipe
+    """
+    templates.render('meta.yaml', pkg, subdir='conda_recipe')
 
 
 def _license():
