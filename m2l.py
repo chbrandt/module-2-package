@@ -4,7 +4,6 @@ import os
 import shutil
 
 import click
-echo = click.echo
 
 # This file's directory
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -28,8 +27,9 @@ pass_options = click.make_pass_decorator(Options, ensure=True)
 @click.option('--author', default=None, type=str, help="Name of package author")
 @click.option('--description', default=None, type=str, help="Short package description")
 @click.option('--dest', default=None, type=str, help="Top directory where package should be created")
+@click.option('--entrypoint', default=None, type=str, help="Function in module to use as entrypoint")
 @pass_options
-def cli(options, pkgname, pkgimp, version, author, description, dest):
+def cli(options, pkgname, pkgimp, version, author, description, dest, entrypoint):
     """
     Module-to-package setup tool
     """
@@ -39,6 +39,7 @@ def cli(options, pkgname, pkgimp, version, author, description, dest):
     options['author'] = author
     options['description'] = description
     options['dest'] = dest
+    options['entrypoint'] = entrypoint
 
 
 class Package(object):
@@ -53,6 +54,7 @@ class Package(object):
      - description
      - author
      - dest
+     - entrypoint
     """
 
     def __init__(self, options):
@@ -65,6 +67,8 @@ class Package(object):
         self.pkgname = self.set_pkgname(options['pkgname'])
         assert self.pkgname and self.pkgimp
 
+        self.entrypoint = options['entrypoint']
+        
         self.author = self.set_author(options['author'])
         self.description = self.set_description(options['description'])
         assert not(self.author is None or self.description is None)
