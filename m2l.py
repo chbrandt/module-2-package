@@ -4,6 +4,7 @@ import os
 import shutil
 
 import click
+import jinja2
 
 # This file's directory
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -20,26 +21,33 @@ class Options(dict):
 
 pass_options = click.make_pass_decorator(Options, ensure=True)
 
-@click.group()
+# @click.group()
+@click.command()
 @click.option('--pkgname', default=None, type=str, help="Name of package to install")
 @click.option('--pkgimp', default=None, type=str, help="Namespace of package to import")
 @click.option('--version', default='0.1', type=str, help="Version of the package")
+@click.option('--requires', default=None, type=str, help="Comma-separated list of dependencies")
 @click.option('--author', default=None, type=str, help="Name of package author")
 @click.option('--description', default=None, type=str, help="Short package description")
 @click.option('--dest', default=None, type=str, help="Top directory where package should be created")
 @click.option('--entrypoint', default=None, type=str, help="Function in module to use as entrypoint")
-@pass_options
-def cli(options, pkgname, pkgimp, version, author, description, dest, entrypoint):
+@click.argument('pymod')
+# @pass_options
+def cli(pkgname, pkgimp, version, requires, author, description, dest, entrypoint, pymod):
     """
     Module-to-package setup tool
     """
+    options = Options()
     options['pkgname'] = pkgname
     options['pkgimp'] = pkgimp
     options['version'] = version
+    options['requires'] = requires
     options['author'] = author
     options['description'] = description
     options['dest'] = dest
     options['entrypoint'] = entrypoint
+
+    init(options, pymod)
 
 
 class Package(object):
@@ -51,6 +59,7 @@ class Package(object):
      - pkgname
      - pkgimp
      - version
+     - requires
      - description
      - author
      - dest
@@ -68,12 +77,14 @@ class Package(object):
         assert self.pkgname and self.pkgimp
 
         self.entrypoint = options['entrypoint']
-        
+
         self.author = self.set_author(options['author'])
         self.description = self.set_description(options['description'])
         assert not(self.author is None or self.description is None)
 
         self.path = self.set_path(options['dest'])
+
+        self.requires = self.set_requires(options['requires'])
 
     def set_pkgname(self, pkgname):
         if pkgname is None or pkgname.strip() == '':
@@ -100,10 +111,16 @@ class Package(object):
             dest = os.path.abspath(self.pkgname)
         return dest
 
+    def set_requires(self, requires):
+        # reqs = []
+        # for req in requires:
+        #     reqs.extend(req.split(','))
+        return requires.split(',') if requires else []
 
-@cli.command()
-@click.argument('pymod')
-@pass_options
+
+# @cli.command()
+# @click.argument('pymod')
+# @pass_options
 def init(options, pymod):
     """
     Initialize package schema from '.py' module

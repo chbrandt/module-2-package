@@ -2,13 +2,13 @@ from setuptools import find_packages, setup
 
 import versioneer
 
-setup(name='{{ pkg.pkgimp }}',
+setup(name='{{ pkg.pkgname }}',
       version=versioneer.get_version(),
       cmdclass=versioneer.get_cmdclass(),
       description='{{ pkg.description }}',
       packages=['{{ pkg.pkgimp }}'],
       {%- if pkg.requires %}
-      install_requires='{{ pkg.requires }}',
+      install_requires={{ pkg.requires }},
       {%- endif %}
       tests_require='pytest',
       {%- if pkg.entrypoint %}
