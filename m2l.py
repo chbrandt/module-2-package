@@ -24,16 +24,18 @@ pass_options = click.make_pass_decorator(Options, ensure=True)
 @click.group()
 @click.option('--pkgname', default=None, type=str, help="Name of package to install")
 @click.option('--pkgimp', default=None, type=str, help="Namespace of package to import")
+@click.option('--version', default='0.1', type=str, help="Version of the package")
 @click.option('--author', default=None, type=str, help="Name of package author")
 @click.option('--description', default=None, type=str, help="Short package description")
 @click.option('--dest', default=None, type=str, help="Top directory where package should be created")
 @pass_options
-def cli(options, pkgname, pkgimp, author, description, dest):
+def cli(options, pkgname, pkgimp, version, author, description, dest):
     """
     Module-to-package setup tool
     """
     options['pkgname'] = pkgname
     options['pkgimp'] = pkgimp
+    options['version'] = version
     options['author'] = author
     options['description'] = description
     options['dest'] = dest
@@ -52,11 +54,12 @@ class Package(object):
      - author
      - dest
     """
-    version = 0.1
 
     def __init__(self, options):
         assert options['pymod']
+        assert options['version']
         self.pymod = options['pymod']
+        self.version = options['version']
 
         self.pkgimp = self.set_pkgimp(options['pkgimp'])
         self.pkgname = self.set_pkgname(options['pkgname'])
@@ -113,6 +116,7 @@ def init(options, pymod):
     # _license(pkg)
     do_git(pkg)
     do_versioneer(pkg)
+    do_commit_version(pkg)
 
 
 def do_package(pkg):
@@ -193,6 +197,24 @@ def do_versioneer(pkg):
     try:
         os.chdir(_path)
         os.system('versioneer install')
+    finally:
+        os.chdir(_pwd)
+
+
+def do_commit_version(pkg):
+    """
+    Finish packaging with commit/version-tag
+    """
+    git_commit_all = 'git commit -am "Module packaged"'
+    git_tag_version = 'git tag -am "Version {0}" {0}'.format(pkg.version)
+
+    _path = pkg.path
+    assert os.path.exists(_path) and os.path.isdir(_path)
+    _pwd = os.getcwd()
+    try:
+        os.chdir(_path)
+        os.system(git_commit_all)
+        os.system(git_tag_version)
     finally:
         os.chdir(_pwd)
 
