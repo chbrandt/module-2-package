@@ -28,9 +28,6 @@ test:
   requires:
     - pytest
 
-  imports:
-    - {{pkg.pkgimp}}
-
 about:
   description: {{pkg.description}}
   author: {{pkg.author}}
