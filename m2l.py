@@ -165,7 +165,7 @@ def do_tests(pkg):
     shutil.copy(os.path.join(templates.path, 'test.py'), pkg.path)
 
 
-def _conda():
+def do_conda():
     pass
 
 

@@ -1,0 +1,33 @@
+package:
+  name: {{pkg.pkgname}}
+  version: {{ '{{'  }} GIT_DESCRIBE_TAG {{ '{{' }}
+
+source:
+  # path: ../{{pkg.pkgname}}
+  git_url: ../../
+
+build:
+  script: python setup.py install --single-version-externally-managed --record=record.txt
+  noarch: python
+  number: {{ '{{'  }} GIT_DESCRIBE_NUMBER {{ '{{' }}
+  string: {{ '{{'  }} GIT_BUILD_STR {{ '{{' }}
+
+requirements:
+  build:
+    - python
+
+  run:
+    - python
+    {% if pkg.requires %}
+    {% endif %}
+
+test:
+  requires:
+    - pytest
+
+  imports:
+    - {{pkg.pkgimp}}
+
+about:
+  description: {{pkg.description}}
+  author: {{pkg.author}}
