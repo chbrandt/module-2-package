@@ -36,7 +36,7 @@ pass_options = click.make_pass_decorator(Options, ensure=True)
 # @pass_options
 def cli(pymod, pkgname, pkgimp, version, requires, author, description, dest, entrypoint, datadir):
     """
-    Module-to-package setup tool
+    Module-to-Library: setup a minimal Python package around a module
     """
     options = Options()
     options['pkgname'] = pkgname

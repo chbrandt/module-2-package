@@ -8,7 +8,7 @@ setup(name='module-2-package',
       description='Create Python packages from single modules',
       packages=['m2l'],
       package_data={'m2l':['templates/*/*']},
-      install_requires=['click', 'jinja2'],
+      install_requires=['click', 'jinja2', 'versioneer'],
       tests_require='pytest',
       entry_points={
         'console_scripts': [
