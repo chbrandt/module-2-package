@@ -8,6 +8,13 @@ M2L provides a command-line interface to get the necessary information from
 the user like the module(s) to consider and package name.
 
 
+# Install
+
+```
+$ python setup.py install
+```
+
+
 # How to use
 
 To setup a package from a Python module, `myapp.py`, we may simply type:
