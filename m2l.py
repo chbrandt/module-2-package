@@ -23,6 +23,7 @@ pass_options = click.make_pass_decorator(Options, ensure=True)
 
 # @click.group()
 @click.command()
+@click.argument('pymod')
 @click.option('--pkgname', default=None, type=str, help="Name of package to install")
 @click.option('--pkgimp', default=None, type=str, help="Namespace of package to import")
 @click.option('--version', default='0.1', type=str, help="Version of the package")
@@ -31,9 +32,9 @@ pass_options = click.make_pass_decorator(Options, ensure=True)
 @click.option('--description', default=None, type=str, help="Short package description")
 @click.option('--dest', default=None, type=str, help="Top directory where package should be created")
 @click.option('--entrypoint', default=None, type=str, help="Function in module to use as entrypoint")
-@click.argument('pymod')
+@click.option('--datadir', default=None, type=str, help="Data directory (recursively copied)")
 # @pass_options
-def cli(pkgname, pkgimp, version, requires, author, description, dest, entrypoint, pymod):
+def cli(pymod, pkgname, pkgimp, version, requires, author, description, dest, entrypoint, datadir):
     """
     Module-to-package setup tool
     """
@@ -46,6 +47,7 @@ def cli(pkgname, pkgimp, version, requires, author, description, dest, entrypoin
     options['description'] = description
     options['dest'] = dest
     options['entrypoint'] = entrypoint
+    options['datadir'] = datadir
 
     init(options, pymod)
 
@@ -64,6 +66,7 @@ class Package(object):
      - author
      - dest
      - entrypoint
+     - datadir
     """
 
     def __init__(self, options):
@@ -85,6 +88,8 @@ class Package(object):
         self.path = self.set_path(options['dest'])
 
         self.requires = self.set_requires(options['requires'])
+
+        self.datadir = self.set_datadir(options['datadir'])
 
     def set_pkgname(self, pkgname):
         if pkgname is None or pkgname.strip() == '':
@@ -117,6 +122,10 @@ class Package(object):
         #     reqs.extend(req.split(','))
         return requires.split(',') if requires else []
 
+    def set_datadir(self, datadir):
+        assert os.path.exists(datadir), "Data directory '{}' not found".format(datadir)
+        return os.path.abspath(datadir)
+
 
 # @cli.command()
 # @click.argument('pymod')
@@ -148,12 +157,25 @@ def do_package(pkg):
     if os.path.exists(path_pkg) and os.path.isdir(path_pkg):
         shutil.rmtree(path_pkg)
     os.mkdir(path_pkg)
+
     path_src = os.path.join(path_pkg, pkg.pkgimp)
-    os.mkdir(path_src)
+    if not os.path.exists(path_src):
+        os.mkdir(path_src)
     shutil.copy(pkg.pymod, path_src)
+
     _src = os.path.join('src', '__init__.py')
     templates.render(_src, pkg, subdir=pkg.pkgimp)
 
+    # Copy (optional) data directory to pkg-directory
+    if pkg.datadir:
+        _do_datadir(pkg.datadir, path_pkg, pkg)
+
+def _do_datadir(path_data, path_pkg, pkg):
+    assert os.path.exists(path_data) and os.path.isdir(path_data)
+    from distutils.dir_util import copy_tree
+    _dest = os.path.basename(path_data)
+    _dest = os.path.join(path_pkg, _dest)
+    copy_tree(path_data, _dest)
 
 def do_readme(pkg):
     """
