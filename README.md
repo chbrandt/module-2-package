@@ -12,15 +12,16 @@ the user like the module(s) to consider and package name.
 
 To setup a package from a Python module, `myapp.py`, we may simply type:
 
-```bash
-# m2l myapp.py
 ```
+$ m2l myapp.py
+```
+Which will create a package named `myapp`, namespaced `myapp`.
 
+To better control name and namespace of the package, version and other attributes
+a number of options are available:
 
-`M2L` though offers a number of options to better define the output package:
-
-```bash
-# m2l --help
+```
+$ m2l --help
 Usage: m2l [OPTIONS] PYMOD
 
   Module-to-package setup tool
