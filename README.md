@@ -31,7 +31,7 @@ a number of options are available:
 $ m2l --help
 Usage: m2l [OPTIONS] PYMOD
 
-  Module-to-package setup tool
+  Module-to-Library: setup a minimal Python package around a module
 
 Options:
   --pkgname TEXT      Name of package to install
