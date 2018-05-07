@@ -123,8 +123,9 @@ class Package(object):
         return requires.split(',') if requires else []
 
     def set_datadir(self, datadir):
-        assert os.path.exists(datadir), "Data directory '{}' not found".format(datadir)
-        return os.path.abspath(datadir)
+        if datadir:
+            assert os.path.exists(datadir), "Data directory '{}' not found".format(datadir)
+            return os.path.abspath(datadir)
 
 
 # @cli.command()
