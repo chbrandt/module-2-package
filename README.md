@@ -11,13 +11,16 @@ the user like the module(s) to consider and package name.
 # How to use
 
 To setup a package from a Python module, `myapp.py`, we may simply type:
+
 ```bash
 # m2l myapp.py
 ```
 
+
 `M2L` though offers a number of options to better define the output package:
-```
-m2l --help
+
+```bash
+# m2l --help
 Usage: m2l [OPTIONS] PYMOD
 
   Module-to-package setup tool
